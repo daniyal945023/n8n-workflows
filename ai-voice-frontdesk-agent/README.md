@@ -15,7 +15,7 @@ To utilize these workflows, you need active accounts and API credentials for the
 * **n8n:** Cloud or self-hosted instance (Version 1.0+)
 * **Vapi:** For AI voice generation and call state webhooks
 * **HubSpot CRM:** For contact management and call logging
-* **TextBelt:** For automated SMS dispatch
+* **TextBelt:** For automated SMS dispatch(for testing only). For Production, use Twilio.
 * **Slack:** For developer/admin error notifications
 
 ## Installation & Setup
