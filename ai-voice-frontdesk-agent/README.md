@@ -1,6 +1,6 @@
 # AI Front Desk Automation
 
-Local service businesses (dental, medspa, HVAC, legal, real estate) lose 20–30% of inbound calls. This system answers calls via AI, checks real calendar availability, books appointments, syncs to CRM, and recovers missed calls via SMS
+Local service businesses (dental, medspa, HVAC, legal, real estate) lose 20–30% of inbound calls. This system answers calls via AI, checks real calendar availability, books appointments, syncs to CRM, and recovers missed calls via SMS.
 
 This folder contains a suite of n8n workflows that power an automated AI Front Desk. The system manages call outcomes, synchronizes contact data with a CRM, attempts automatic SMS recovery for missed calls, and provides real-time error monitoring to ensure maximum uptime.
 
