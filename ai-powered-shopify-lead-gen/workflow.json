@@ -1,0 +1,717 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Lead Machine",
+        "formDescription": "Provide the Info Below",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Business Type",
+              "placeholder": "e.g. Plumber",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Location",
+              "placeholder": "Enter 2 letter country code, e.g US, NORTH_AMERICA",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Lead Number",
+              "fieldType": "number",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email Style",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Friendly"
+                  },
+                  {
+                    "option": "Professional"
+                  },
+                  {
+                    "option": "Simple"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false,
+          "buttonLabel": "GO 🚀"
+        }
+      },
+      "id": "db4946bf-99f9-4545-a8f6-8e8c0b7b4944",
+      "name": "On form submission",
+      "type": "n8n-nodes-base.formTrigger",
+      "position": [
+        -1952,
+        128
+      ],
+      "webhookId": "[REDACTED_WEBHOOK_ID]",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "content": "# Business Data",
+        "height": 336,
+        "width": 1120,
+        "color": 3
+      },
+      "id": "2c1588d0-0e2d-4782-97f8-21ab62eba8a4",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2144,
+        48
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "fdb88a5a-0c8c-44eb-91f4-9693f68f0e0d",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "position": [
+        -2000,
+        656
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "[REDACTED_CREDENTIAL_ID]",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "\n",
+        "height": 368,
+        "width": 1136,
+        "color": 4
+      },
+      "id": "e95f6561-7b8d-4c92-be97-4e45b997d5b6",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2224,
+        384
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "# Email Send",
+        "height": 448,
+        "width": 2096,
+        "color": 5
+      },
+      "id": "76680200-1506-4e3b-8b22-20a337579d5f",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2672,
+        800
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.apify.com/v2/actors/clearpath~shopify-store-leads/run-sync-get-dataset-items?token=[REDACTED_APIFY_TOKEN]",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"{{ $json['Business Type'] }}\",\n  \"storeLocation\": \"{{ $json['Location'] }}\",\n  \"maxItems\": {{ $json['Lead Number'] }},\n  \"skipPreviouslyScraped\": false\n}",
+        "options": {}
+      },
+      "id": "51c13deb-7296-41b9-8783-5502175c7869",
+      "name": "Scrape Shopify Store Leads",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -1696,
+        128
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0906e21a-0958-433e-b400-8694915ef3c9",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.websiteUrl }}",
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4e8fd345-32be-4732-bb58-bda10c705747",
+      "name": "FilterByWebsite",
+      "type": "n8n-nodes-base.filter",
+      "position": [
+        -1440,
+        128
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/actors/apivault_labs~shopify-store-analyzer/run-sync-get-dataset-items?token=[REDACTED_APIFY_TOKEN]",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"storeUrls\": [\n    \"{{ $json.websiteUrl }}\"\n  ],\n  \"extractTechStack\": true,\n  \"extractTraffic\": true,\n  \"extractPromo\": true,\n  \"extractRevenueEstimate\": true,\n  \"extractSocials\": true,\n  \"extractProducts\": false,\n  \"extractCollections\": false,\n  \"extractSitemap\": false,\n  \"deepContactCrawl\": false,\n  \"enrichContacts\": false,\n  \"extractContact\": false\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -1184,
+        128
+      ],
+      "id": "2765293c-c19b-4a35-b8b9-c69d5affef06",
+      "name": "Analyze Shopify Store Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Summarize the following Shopify store data into a concise 3-4 sentence paragraph. Focus on their installed apps/tech stack, estimated monthly traffic, revenue, and active promo codes and customer segment(if available). Strictly use the given data, DONOT make up any information yourself. Here is the data:\n\n{{ JSON.stringify($json) }}",
+        "messages": {
+          "messageValues": []
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -2016,
+        464
+      ],
+      "id": "dc62cc51-9bb1-40e5-bbd7-d4363986aa80",
+      "name": "Format Facts with LLM"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "[REDACTED_DOCUMENT_ID]",
+          "mode": "list",
+          "cachedResultName": "Profitguard_leads",
+          "cachedResultUrl": "[REDACTED_DOCUMENT_URL]"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "[REDACTED_SHEET_ID]",
+          "mode": "list",
+          "cachedResultName": "clean_leads_12_columns",
+          "cachedResultUrl": "[REDACTED_SHEET_URL]"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Facts": "={{ typeof $json.output === 'object' ? JSON.stringify($json.output) : ($json.output || $json.text || JSON.stringify($json)) }}",
+            "Website": "={{ $('Scrape Shopify Store Leads').item.json.websiteUrl || $('Analyze Shopify Store Data').item.json.domain }}",
+            "Company Name": "={{ $('Scrape Shopify Store Leads').item.json.name || $('Analyze Shopify Store Data').item.json.domain }}",
+            "Category": "={{ $('On form submission').item.json['Business Type'] }}",
+            "Email": "={{ $('Scrape Shopify Store Leads').item.json.contacts ? ($('Scrape Shopify Store Leads').item.json.contacts.find(c => c.method === 'email')?.target || '') : '' }}",
+            "Mailing Status": "Pending"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Website",
+              "displayName": "Website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Facts",
+              "displayName": "Facts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Mailing Status",
+              "displayName": "Mailing Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "c311c721-d8de-4581-b1f7-a7cf2b1cbc62",
+      "name": "Append row in sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        -1376,
+        464
+      ],
+      "typeVersion": 4.6,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "[REDACTED_CREDENTIAL_ID]",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -1728,
+        1088
+      ],
+      "id": "009d0f6b-f539-4946-8589-f9b0e6992161",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "[REDACTED_CREDENTIAL_ID]",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8ab73a5e-6659-4615-9f03-a1b3dacaa42e",
+              "name": "Send Time",
+              "type": "string",
+              "value": "={{ $now.toFormat(\"MM-dd-yyyy (h:mm a)\") }}"
+            },
+            {
+              "id": "a102af99-f990-4f54-aa19-96a4c8002a9b",
+              "name": "Email Address",
+              "type": "string",
+              "value": "={{ $('Wait').item.json['Email'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0734947b-d05b-482b-aebd-ea1648900cb0",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -1328,
+        896
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a professional cold outreach specialist for Upward Engine.\n\nWrite a personalized cold email using this recipient data:\n- Company Name: {{ $('Wait').item.json['Company Name'] }}\n- Industry / Category: {{ $('Wait').item.json['Category'] }}\n- Store Facts & Tech Stack: {{ $('Wait').item.json['Facts'] }}\n- Requested Tone/Style: {{ $('On form submission').item.json['Email Style'] }}\n\nInstructions:\n1. Keep it short, conversational, and direct.\n2. Return ONLY a valid JSON object in this exact structure without markdown formatting:\n{\n  \"subject\": \"Your subject line here\",\n  \"body\": \"Your email body here\"\n}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -1776,
+        896
+      ],
+      "id": "558f5495-04a8-4415-8da5-8b1a601a5146",
+      "name": "Send Emails with AI"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "e47cfde0-1470-4cc8-a418-0d616d0d2bb9",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        -2496,
+        880
+      ],
+      "notesInFlow": false,
+      "typeVersion": 3,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "id": "8744c8f7-0b58-40f9-a7ff-6f11e0bbd1f1",
+      "name": "Wait",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        -2064,
+        896
+      ],
+      "webhookId": "[REDACTED_WEBHOOK_ID]",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json['Email Address'] }}",
+        "subject": "={{ JSON.parse($('Send Emails with AI').item.json.text.replace(/```json|```/g, '')).subject }}",
+        "emailType": "text",
+        "message": "={{ JSON.parse($('Send Emails with AI').item.json.text.replace(/```json|```/g, '')).body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "dfc687a5-4e92-4f79-8ea4-f996226155cf",
+      "name": "Send a message",
+      "type": "n8n-nodes-base.gmail",
+      "maxTries": 2,
+      "position": [
+        -1104,
+        896
+      ],
+      "webhookId": "[REDACTED_WEBHOOK_ID]",
+      "executeOnce": false,
+      "retryOnFail": false,
+      "typeVersion": 2.1,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "[REDACTED_CREDENTIAL_ID]",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "[REDACTED_DOCUMENT_ID]",
+          "mode": "list",
+          "cachedResultName": "Profitguard_leads",
+          "cachedResultUrl": "[REDACTED_DOCUMENT_URL]"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "[REDACTED_SHEET_ID]",
+          "mode": "list",
+          "cachedResultName": "clean_leads_12_columns",
+          "cachedResultUrl": "[REDACTED_SHEET_URL]"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $('Edit Fields').item.json['Email Address'] }}",
+            "Mailing Status": "✅"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "schema": [
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Website",
+              "displayName": "Website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Facts",
+              "displayName": "Facts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Mailing Status",
+              "displayName": "Mailing Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "d7cc36aa-5d4c-4266-8de4-592b3d8d5890",
+      "name": "Append or update row in sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        -832,
+        896
+      ],
+      "typeVersion": 4.6,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "[REDACTED_CREDENTIAL_ID]",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Scrape Shopify Store Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Format Facts with LLM",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape Shopify Store Leads": {
+      "main": [
+        [
+          {
+            "node": "FilterByWebsite",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FilterByWebsite": {
+      "main": [
+        [
+          {
+            "node": "Analyze Shopify Store Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Shopify Store Data": {
+      "main": [
+        [
+          {
+            "node": "Format Facts with LLM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Facts with LLM": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Send Emails with AI",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Emails with AI": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Send Emails with AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "[REDACTED_INSTANCE_ID]"
+  }
+}
