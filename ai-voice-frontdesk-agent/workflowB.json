@@ -1,0 +1,658 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "vapi-end-of-call",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1216,
+        768
+      ],
+      "id": "54090d7f-b804-4a20-b9a3-aad1104e6ea2",
+      "name": "Webhook",
+      "webhookId": "YOUR-WEBHOOK-ID-HERE",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR-VAPI-CREDENTIAL-ID",
+          "name": "Vapi Shared Secret"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const body = $json.body || {};\nconst message = body.message || {};\n\n// Extract key elements from Vapi end-of-call report structure\nconst callId = message.call?.id || 'unknown';\nconst customerPhone = message.call?.customer?.number || null;\nconst endedReason = message.endedReason || 'unknown';\nconst transcript = message.transcript || '';\nconst summary = message.analysis?.summary || 'No summary provided.';\nconst recordingUrl = message.recordingUrl || '';\n\n// Determine outcome categories\nlet outcome = 'inquiry';\nif (endedReason === 'customer-did-not-answer' || endedReason === 'voicemail') {\n  outcome = 'missed';\n} else if (summary.toLowerCase().includes('book') || summary.toLowerCase().includes('scheduled')) {\n  outcome = 'booked';\n}\n\nreturn {\n  json: {\n    callId,\n    customerPhone,\n    endedReason,\n    summary,\n    outcome,\n    recordingUrl,\n    transcript\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -992,
+        768
+      ],
+      "id": "da532cd5-9c6f-48c0-a7d8-7d35bd2ef8cd",
+      "name": "Parse Call Summary"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.outcome }}",
+                    "rightValue": "booked",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "42c9e178-16d5-4c9b-a48f-3db6e6d65e83"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Booked"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "19101bc8-3665-4439-a3aa-13c899149e3c",
+                    "leftValue": "={{ $json.outcome }}",
+                    "rightValue": "inquiry",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Inquiry"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "0723aac3-9c18-4920-a0b4-fe65884c3cd5",
+                    "leftValue": "={{ $json.outcome }}",
+                    "rightValue": "missed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Missed"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -736,
+        752
+      ],
+      "id": "95fa97f4-6e53-4dcb-a499-aa5992ff2a2a",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f71d14dd-9b6b-4b10-b95e-fb3daad39473",
+              "leftValue": "={{ $json.shouldSendSms }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -80,
+        1008
+      ],
+      "id": "9e0e81f3-d688-4fdc-b146-b063a3d30dad",
+      "name": "Should Send SMS"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.hubapi.com/crm/v3/objects/contacts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"properties\": {\n    \"phone\": \"{{ $('Build SMS Recovery Payload').first().json.toPhone }}\",\n    \"last_missed_call_log\": \"[MISSED CALL RECOVERY DISPATCHED]\\nCaller: {{ $('Parse Call Summary').first().json.customerPhone }}\\nAction: Automated SMS recovery message sent via Vapi.\",\n    \"last_appointment_service\": \"Missed Call - Recovery SMS Sent\",\n    \"last_appointment_date\": \"{{ new Date().toISOString().split('T')[0] }}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        912,
+        880
+      ],
+      "id": "c7c6d0e5-5d13-4ff4-b4be-cbd4e79e1bf7",
+      "name": "Hubspot - Log Missed Call Recovery",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR-HUBSPOT-CREDENTIAL-ID",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const customerPhone = $json.customerPhone;\nconst callId = $json.callId;\n\n// Defensive Guard: If call was missed but no caller ID is present, flag skip\nif (!customerPhone || customerPhone === 'unknown') {\n  return {\n    json: {\n      shouldSendSms: false,\n      reason: \"No valid caller ID available to recover call.\"\n    }\n  };\n}\n\n// System message for missed call recovery\nconst smsText = \"Hi there! We saw we just missed your call at the front desk. Would you like to schedule an appointment or ask a question? Reply to this text and our AI assistant can help you right now!\";\n\nreturn {\n  json: {\n    shouldSendSms: true,\n    toPhone: customerPhone,\n    smsText: smsText,\n    callId: callId\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -336,
+        1008
+      ],
+      "id": "bc3dd900-0796-4e8b-a599-c3d0bc32b78f",
+      "name": "Build SMS Recovery Payload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.hubapi.com/crm/v3/objects/contacts/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"filterGroups\": [\n    {\n      \"filters\": [\n        {\n          \"propertyName\": \"phone\",\n          \"operator\": \"EQ\",\n          \"value\": \"{{ $json.customerPhone }}\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -192,
+        496
+      ],
+      "id": "31dd3485-c027-46cd-aedd-2d3091e785ee",
+      "name": "Search Contact By Phone",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "alwaysOutputData": false,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR-HUBSPOT-CREDENTIAL-ID",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.hubapi.com/crm/v3/objects/contacts/{{ $json.results[0].id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"properties\": {\n    \"last_missed_call_log\": \"[MISSED CALL RECOVERY DISPATCHED]\\nCaller: {{ $('Parse Call Summary').first().json.customerPhone }}\\nAction: Automated SMS recovery message sent via Vapi.\",\n    \"last_appointment_service\": \"Missed Call - Recovery SMS Sent\",\n    \"last_appointment_date\": \"{{ new Date().toISOString().split('T')[0] }}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        544,
+        432
+      ],
+      "id": "95aaaf85-87d7-4b62-8252-76019e236086",
+      "name": "Update Contact",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR-HUBSPOT-CREDENTIAL-ID",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://textbelt.com/text",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phone",
+              "value": "={{ $json.toPhone }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.smsText }}"
+            },
+            {
+              "name": "key",
+              "value": "YOUR_TEXTBELT_API_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        240,
+        992
+      ],
+      "id": "0a17d91b-7554-4744-b3d6-6ea5d2cb8be7",
+      "name": "Send SMS with TextBelt"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0ba02e2f-cc76-4f86-8211-29a52cdfd12e",
+              "leftValue": "={{ $json.results.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        112,
+        512
+      ],
+      "id": "f5cd4e55-265d-477b-af29-5767c8bd1ae4",
+      "name": "If Contact Exists"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        848,
+        496
+      ],
+      "id": "a97e436a-5e04-4073-acd5-4105c712dbbe",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.hubapi.com/crm/v3/objects/contacts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"properties\": {\n    \"phone\": \"{{ $('Parse Call Summary').first().json.customerPhone }}\",\n   \"last_missed_call_log\": \"[MISSED CALL RECOVERY DISPATCHED]\\nCaller: {{ $('Parse Call Summary').first().json.customerPhone }}\\nAction: Automated SMS recovery message sent via Vapi.\",\n   \"last_appointment_date\": \"{{ new Date().toISOString().split('T')[0] }}\",\n    \"last_appointment_service\": \"Call Outcome: {{ $('Parse Call Summary').first().json.outcome }}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        544,
+        640
+      ],
+      "id": "33dd67d9-1755-47d2-adb1-7d3ec2aa4a30",
+      "name": "Create Contact In Hubspot",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR-HUBSPOT-CREDENTIAL-ID",
+          "name": "Header Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        224,
+        1248
+      ],
+      "id": "a16133cc-7879-4fda-a086-7dcef00ddae6",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.hubapi.com/crm/v3/objects/contacts/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"filterGroups\": [\n    {\n      \"filters\": [\n        {\n          \"propertyName\": \"phone\",\n          \"operator\": \"EQ\",\n          \"value\": \"{{ $json.customerPhone }}\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        528,
+        976
+      ],
+      "id": "d803402a-68f2-4c9e-95df-38a5e5872cb6",
+      "name": "Search Contact By Phone1",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "alwaysOutputData": false,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR-HUBSPOT-CREDENTIAL-ID",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b2f3c4d5-1a2b-4c3d-9e8f-7a6b5c4d3e2f",
+              "leftValue": "={{ $json.results.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        752,
+        976
+      ],
+      "id": "42586730-74ec-443d-bacc-c0b0a732b53e",
+      "name": "If Contact Exists1"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.hubapi.com/crm/v3/objects/contacts/{{ $json.results[0].id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"properties\": {\n    \"last_missed_call_log\": \"[MISSED CALL RECOVERY DISPATCHED]\\nCaller: {{ $('Parse Call Summary').first().json.customerPhone }}\\nAction: Automated SMS recovery message sent via Vapi.\",\n    \"last_appointment_service\": \"Missed Call - Recovery SMS Sent\",\n    \"last_appointment_date\": \"{{ new Date().toISOString().split('T')[0] }}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        912,
+        1072
+      ],
+      "id": "2cdc1cf9-3630-4009-8e07-b68a6cfa1e4d",
+      "name": "Update Contact (Missed)",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR-HUBSPOT-CREDENTIAL-ID",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1184,
+        640
+      ],
+      "id": "7cce20a7-be3b-4e7d-b086-f3f048fe8621",
+      "name": "Log Contact Creation Error"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Call Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Call Summary": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Search Contact By Phone",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Search Contact By Phone",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build SMS Recovery Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Send SMS": {
+      "main": [
+        [
+          {
+            "node": "Send SMS with TextBelt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build SMS Recovery Payload": {
+      "main": [
+        [
+          {
+            "node": "Should Send SMS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Contact By Phone": {
+      "main": [
+        [
+          {
+            "node": "If Contact Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Contact": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send SMS with TextBelt": {
+      "main": [
+        [
+          {
+            "node": "Search Contact By Phone1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Contact Exists": {
+      "main": [
+        [
+          {
+            "node": "Update Contact",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Contact In Hubspot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Contact In Hubspot": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Log Contact Creation Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Contact By Phone1": {
+      "main": [
+        [
+          {
+            "node": "If Contact Exists1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Contact Exists1": {
+      "main": [
+        [
+          {
+            "node": "Update Contact (Missed)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Hubspot - Log Missed Call Recovery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_INSTANCE_ID"
+  }
+}
