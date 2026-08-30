@@ -1,14 +1,12 @@
 # AI Lead Generation & Automated Outreach Workflow (n8n)
 
-**Stop wasting hours on manual prospecting and generic cold emails that get ignored.**
-
 Finding qualified e-commerce leads, analyzing their tech stacks, traffic, and revenue, and manually drafting personalized emails eats up days of valuable sales time. Traditional static lead lists are usually outdated, and generic templates fail to convert.
 
 This production-ready **n8n AI Lead Generation & Outreach Engine** solves that bottleneck by fully automating the pipeline. It scrapes targeted Shopify stores, extracts deep store insights using Google Gemini AI, drafts context-aware hyper-personalized emails based on your chosen tone, and manages CRM tracking in real-time—all on autopilot.
 
 ---
 
-## 🚀 Key Features
+## Key Features
 
 * **Interactive Form Trigger:** Captures campaign parameters instantly, including business type, target location, lead volume, and preferred email style (**Friendly**, **Professional**, **Simple**).
 * **Automated Shopify Scraping:** Leverages Apify actors to pull targeted store data and filters out entries missing valid website URLs.
@@ -19,7 +17,7 @@ This production-ready **n8n AI Lead Generation & Outreach Engine** solves that b
 
 ---
 
-## 🛠️ Workflow Architecture
+## Workflow Architecture
 
 1. **On form submission:** User specifies campaign parameters via an n8n form.
 2. **Scrape Shopify Store Leads (Apify):** Queries and retrieves matching Shopify stores.
@@ -33,7 +31,7 @@ This production-ready **n8n AI Lead Generation & Outreach Engine** solves that b
 
 ---
 
-## ⚙️ Prerequisites & Credentials
+## Prerequisites & Credentials
 
 To deploy this workflow, ensure you have active credentials configured in your n8n instance for:
 
@@ -44,7 +42,7 @@ To deploy this workflow, ensure you have active credentials configured in your n
 
 ---
 
-## 📦 Setup Instructions
+## Setup Instructions
 
 1. Import the provided workflow JSON file into your n8n environment.
 2. Connect your respective credentials for Google Gemini, Apify, Google Sheets, and Gmail.
