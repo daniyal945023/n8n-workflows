@@ -1,16 +1,20 @@
 # AI Lead Generation & Automated Outreach Workflow (n8n)
 
-A powerful, end-to-end automated workflow built in **n8n** that scrapes Shopify stores based on custom criteria, enriches and analyzes store data using **Google Gemini AI**, logs leads into **Google Sheets**, and dispatches tailored, AI-generated cold emails via **Gmail**.
+**Stop wasting hours on manual prospecting and generic cold emails that get ignored.**
+
+Finding qualified e-commerce leads, analyzing their tech stacks, traffic, and revenue, and manually drafting personalized emails eats up days of valuable sales time. Traditional static lead lists are usually outdated, and generic templates fail to convert.
+
+This production-ready **n8n AI Lead Generation & Outreach Engine** solves that bottleneck by fully automating the pipeline. It scrapes targeted Shopify stores, extracts deep store insights using Google Gemini AI, drafts context-aware hyper-personalized emails based on your chosen tone, and manages CRM tracking in real-time—all on autopilot.
 
 ---
 
 ## 🚀 Key Features
 
-* **Interactive Form Trigger:** Captures campaign parameters including business type, target location, lead volume, and preferred email style (**Friendly**, **Professional**, **Simple**).
+* **Interactive Form Trigger:** Captures campaign parameters instantly, including business type, target location, lead volume, and preferred email style (**Friendly**, **Professional**, **Simple**).
 * **Automated Shopify Scraping:** Leverages Apify actors to pull targeted store data and filters out entries missing valid website URLs.
 * **Store Intelligence & AI Summaries:** Extracts tech stacks, traffic estimates, and promo data via Apify, then uses Google Gemini to generate concise company summaries.
 * **CRM Logging:** Automatically appends all enriched leads and insights to a Google Sheets document with a `Pending` mailing status.
-* **Personalized AI Outreach:** Sequentially loops through leads, drafts contextualized cold outreach emails using Gemini structured JSON outputs, and sends them via Gmail.
+* **Personalized AI Outreach:** Sequentially loops through leads, drafts contextualized cold outreach emails using Gemini structured JSON outputs, and dispatches them via Gmail.
 * **Status Tracking:** Automatically updates the Google Sheets tracker to `✅` once an email has been successfully sent.
 
 ---
