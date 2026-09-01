@@ -225,71 +225,7 @@
       "onError": "continueErrorOutput"
     },
     {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.hubapi.com/crm/v3/objects/contacts/search",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\"filterGroups\":[{\"filters\":[{\"propertyName\":\"phone\",\"operator\":\"EQ\",\"value\":\"{{ $('BuildBookingWindow').item.json.callerPhone }}\"}]}]}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.5,
-      "position": [
-        1152,
-        -144
-      ],
-      "id": "e220ee78-4784-4743-af55-08230d2086a0",
-      "name": "SearchContactByPhone",
-      "retryOnFail": true,
-      "maxTries": 2,
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "your-credential-id",
-          "name": "Header Auth account"
-        }
-      },
-      "onError": "continueErrorOutput"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 3
-          },
-          "conditions": [
-            {
-              "id": "f14bd602-5bfa-4078-911f-e5b60936fea8",
-              "leftValue": "={{ $json.results.length }}",
-              "rightValue": 0,
-              "operator": {
-                "type": "number",
-                "operation": "gt"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        1344,
-        -176
-      ],
-      "id": "549540de-6df6-4cb5-86cb-2e95a774da7d",
-      "name": "IfContactExists"
-    },
-    {
-      "parameters": {
-        "numberInputs": 3
-      },
+      "parameters": {},
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
@@ -325,64 +261,6 @@
       ],
       "id": "5be96afc-ba5e-4eb4-8121-1db416a082dc",
       "name": "FormatConflictResponse"
-    },
-    {
-      "parameters": {
-        "method": "PATCH",
-        "url": "=https://api.hubapi.com/crm/v3/objects/contacts/{{ $json.results[0].id }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\"properties\":{\"last_appointment_date\":\"{{ $('EvaluateStillFree').item.json.startISO }}\",\"last_appointment_service\":\"{{ $('EvaluateStillFree').item.json.service }}\"}}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.5,
-      "position": [
-        1664,
-        -256
-      ],
-      "id": "f30b427d-e6d2-4a3b-bd05-361e5a619bb6",
-      "name": "UpdateContactInHubspot",
-      "retryOnFail": true,
-      "maxTries": 2,
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "your-credential-id",
-          "name": "Header Auth account"
-        }
-      },
-      "onError": "continueErrorOutput"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.hubapi.com/crm/v3/objects/contacts",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\"properties\":{\"firstname\":\"{{ $('EvaluateStillFree').item.json.customerName }}\",\"phone\":\"{{ $('EvaluateStillFree').item.json.callerPhone }}\",\"last_appointment_date\":\"{{ $('EvaluateStillFree').item.json.startISO }}\",\"last_appointment_service\":\"{{ $('EvaluateStillFree').item.json.service }}\"}}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.5,
-      "position": [
-        1632,
-        -96
-      ],
-      "id": "9698cc68-9f7c-4596-9670-63fff736570e",
-      "name": "CreateContactInHubspot",
-      "retryOnFail": true,
-      "maxTries": 2,
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "your-credential-id",
-          "name": "Header Auth account"
-        }
-      },
-      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -522,6 +400,33 @@
           "name": "Header Auth account"
         }
       }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.hubapi.com/crm/v3/objects/contacts/batch/upsert",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"inputs\": [\n    {\n      \"idProperty\": \"phone_unique\",\n      \"id\": \"{{ $('EvaluateStillFree').item.json.callerPhone }}\",\n      \"properties\": {\n        \"phone_unique\": \"{{ $('EvaluateStillFree').item.json.callerPhone }}\",\n        \"phone\": \"{{ $('EvaluateStillFree').item.json.callerPhone }}\",\n        \"firstname\": \"{{ $('EvaluateStillFree').item.json.customerName }}\",\n        \"last_appointment_date\": \"{{ $('EvaluateStillFree').item.json.startISO }}\",\n        \"last_appointment_service\": \"{{ $('EvaluateStillFree').item.json.service }}\"\n      }\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1408,
+        -176
+      ],
+      "id": "e7a3fb66-f63c-44e9-ba16-d62d4a9371ec",
+      "name": "Batch Upsert",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "your-credential-id",
+          "name": "Header Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
     }
   ],
   "connections": {
@@ -670,42 +575,6 @@
         ]
       ]
     },
-    "SearchContactByPhone": {
-      "main": [
-        [
-          {
-            "node": "IfContactExists",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Fallback1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "IfContactExists": {
-      "main": [
-        [
-          {
-            "node": "UpdateContactInHubspot",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "CreateContactInHubspot",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Merge": {
       "main": [
         [
@@ -733,42 +602,6 @@
         [
           {
             "node": "RespondToVapi",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "UpdateContactInHubspot": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Fallback1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "CreateContactInHubspot": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 1
-          }
-        ],
-        [
-          {
-            "node": "Fallback1",
             "type": "main",
             "index": 0
           }
@@ -819,7 +652,7 @@
       "main": [
         [
           {
-            "node": "SearchContactByPhone",
+            "node": "Batch Upsert",
             "type": "main",
             "index": 0
           }
@@ -839,7 +672,25 @@
           {
             "node": "Merge",
             "type": "main",
-            "index": 2
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Batch Upsert": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fallback1",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
