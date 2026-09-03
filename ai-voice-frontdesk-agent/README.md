@@ -19,7 +19,7 @@ To utilize these workflows, you need active accounts and API credentials for the
 * **HubSpot CRM:** For contact management and call logging
 * **TextBelt:** For automated SMS dispatch(for testing only). For Production, use Twilio.
 * **Slack:** For developer/admin error notifications
-* **Ngrok: ** For publishing the workflow and testing with production URLs.
+* **Ngrok:** For publishing the workflow and testing with production URLs.
 
 ## Installation & Setup
 
