@@ -8,7 +8,7 @@ This folder contains a suite of n8n workflows that power an automated AI Front D
 
 * **Call Processing & Missed Call Recovery:** Captures end-of-call webhooks from the AI voice assistant (Vapi), parses the call outcome (booked, inquiry, or missed), searches for or creates the contact in HubSpot, logs the interaction, and automatically dispatches a recovery SMS via TextBelt if the call was missed.
 * **Error Monitoring & Alerting:** Acts as a global fallback for the system. Uses the n8n Error Trigger to catch any failed node executions and immediately routes diagnostic alerts (including workflow name and error message) to a designated Slack channel.
-* **Core Front Desk Operations:** Handles the primary data routing, internal syncing, or scheduling logic for the AI assistant. *(Note: Adjust this bullet point to match the specific function of your third workflow).*
+* **Core Front Desk Operations:** Handles the primary data routing, internal syncing, or scheduling logic for the AI assistant.
 
 ## Prerequisites
 
